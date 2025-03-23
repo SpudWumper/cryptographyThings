@@ -3,15 +3,46 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 import tkinter as tk
 
-algorithmNames = ["Caesar", "Substitution", "Vigenere", "Hill", "El Gammal", "RSA"]
+import encryptionAlgorithms as enc
+
+algorithmNames = ["Caesar", "Substitution", "Hill", "Railfence" , "Autokey", "El Gammal", "RSA"]
 
 #create a class thats just a wrapper for all my algorithms?
+class encryptAlgs:
+    def __init__(self):
+        self.currentlySelected = ""
+
+    def caesar(self, plaintext: str, n: int, doFormat: bool):
+        return enc.caesenc(plaintext, n, doFormat)
+    
+    def subkey(self, plaintext: str, key: str):
+        return enc.subenckey(plaintext, key)
+    
+    def hill(self, plaintext: str, key: str):
+        return enc.hillEnc(plaintext, key)
+    
+    def autokey(self, plaintext: str, key: str):
+        return enc.autokey(plaintext, key)
+    
+    def rail(self, plaintext: str, keyL: int):
+        return enc.railfence(plaintext, keyL)
+    
+    # def elG(self, plaintext: str, n: int, doFormat: bool):
+    #     return enc.caesenc(plaintext, n, doFormat)
+    
+    # def rsa(self, plaintext: str, n: int, doFormat: bool):
+    #     return enc.caesenc(plaintext, n, doFormat)
 
 #class for the main window for gui?
 class cryptographyUI:
     def __init__(self, w: int, h:int):
+        self.encryptionAlgorithms = encryptAlgs()
+
         self.window = tk.Tk()
         self.window.title("Cryptography Algorithms")
+        self.window.resizable(False,False)
+
+        self.buttons = []
         
         sizeFrame = tk.Frame(width = w, height = h)
         sizeFrame.pack()
@@ -24,14 +55,17 @@ class cryptographyUI:
         inTextFrame.pack(side=tk.LEFT)
         outTextFrame.pack(side=tk.RIGHT)
 
-        inTextBox = tk.Text(master=inTextFrame)
-        inTextBox.insert("1.0", "Enter the string you want to encrypt...")
-        outTextBox = tk.Text(master=outTextFrame)
-        outTextBox.insert("1.0", "...Encrypted string shows up here")
-        inTextBox.place(relwidth=1,relheight=1)
-        outTextBox.place(relwidth=1,relheight=1)
+        self.inTextBox = tk.Text(master=inTextFrame)
+        self.inTextBox.insert("1.0", "Enter the string you want to encrypt...")
+        self.outTextBox = tk.Text(master=outTextFrame)
+        self.outTextBox.insert("1.0", "...Encrypted string shows up here")
+        self.inTextBox.place(relwidth=1,relheight=1)
+        self.outTextBox.place(relwidth=1,relheight=1)
 
-        algFrame = tk.Frame(master=sizeFrame,width=w, height=h/2)
+        self.algOptFrame = tk.Frame(master=sizeFrame, width=w, height=h/3)
+        self.algOptFrame.pack(side=tk.BOTTOM)
+
+        algFrame = tk.Frame(master=sizeFrame,width=w, height=h/6)
         #algFrame.pack_propagate(False)
         algFrame.pack(side=tk.BOTTOM)
 
@@ -40,14 +74,90 @@ class cryptographyUI:
                 master=algFrame,
                 text=buttonNames,
                 width=10,
-                height=5,
+                height=2,
                 relief="raised"
             )
-            button.pack(side=tk.LEFT)
-        
-        
+            #button.bind("<Button-1>", encrypt)
+            button.grid(row=0, column=algorithmNames.index(buttonNames), padx=10, pady=10)
+            self.buttons.append(button)
+
+    def encrypt(self, event):
+        parentName = event.widget.winfo_parent()
+        parent = event.widget._nametowidget(parentName)
+
+        plain = self.inTextBox.get(1.0, tk.END)
+        self.outTextBox.delete(1.0, tk.END)
+
+        match self.encryptionAlgorithms.currentlySelected:
+            case "Caesar":
+                n = 0
+                for widget in parent.winfo_children():
+                    if widget.winfo_class() == "Entry":
+                        t = widget.get()
+                        try:
+                            n = int(t)
+                        except ValueError:
+                            print("Integer not entered")
+
+                if n != 0:
+                    ciph = self.encryptionAlgorithms.caesar(plain, n, True)
+                    self.outTextBox.insert(1.0, ciph)
+            case "Substitution":
+                ciph = self.encryptionAlgorithms.subkey(plain, "test")
+                self.outTextBox.insert(1.0, ciph)
+            case "Hill":
+                ciph = self.encryptionAlgorithms.hill(plain, "whiterabb")
+                self.outTextBox.insert(1.0, ciph)
+            case "Railfence":
+                ciph = self.encryptionAlgorithms.rail(plain, 5)
+                self.outTextBox.insert(1.0, ciph)
+            case "Autokey":
+                ciph = self.encryptionAlgorithms.autokey(plain, "test")
+                self.outTextBox.insert(1.0, ciph)
+
+    def select(self, event):
+        alg = event.widget["text"]
+
+        match alg:
+            case "Caesar":
+                self.encryptionAlgorithms.currentlySelected = alg
+
+                for widget in self.algOptFrame.winfo_children():
+                    widget.destroy()
+                
+                shiftL = tk.Label(master=self.algOptFrame,text="Choose the shift to use for encryption:")
+                shiftL.pack(fill="x",side=tk.TOP)
+
+                shiftT = tk.Entry(master=self.algOptFrame,width=10)
+                shiftT.pack(side=tk.TOP)
+
+                errorL = tk.Label(master=self.algOptFrame,text="")
+                errorL.pack(fill="x",side=tk.BOTTOM)
+
+                encButton = tk.Button(master=self.algOptFrame,width=10,height=2,text="Encrypt")
+                encButton.bind("<Button-1>", self.encrypt)
+                encButton.pack(side=tk.BOTTOM)
+
+                #ciph = self.encryptionAlgorithms.caesar(plain, 5, True)
+                #self.outTextBox.insert(1.0, ciph)
+            # case "Substitution":
+            #     ciph = self.encryptionAlgorithms.subkey(plain, "test")
+            #     self.outTextBox.insert(1.0, ciph)
+            # case "Hill":
+            #     ciph = self.encryptionAlgorithms.hill(plain, "whiterabb")
+            #     self.outTextBox.insert(1.0, ciph)
+            # case "Railfence":
+            #     ciph = self.encryptionAlgorithms.rail(plain, 5)
+            #     self.outTextBox.insert(1.0, ciph)
+            # case "Autokey":
+            #     ciph = self.encryptionAlgorithms.autokey(plain, "test")
+            #     self.outTextBox.insert(1.0, ciph)
+
 
     def enterMain(self):
+        for b in self.buttons:
+            b.bind("<Button-1>", self.select)
+
         self.window.mainloop()
 
 if __name__ == "__main__":

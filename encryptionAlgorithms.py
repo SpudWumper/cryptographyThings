@@ -94,6 +94,7 @@ def subenckey (plain, key):
 def hillEnc(plain, key):
     alph = "abcdefghijklmnopqrstuvwxyz"
     plain = plain.lower()
+    key = key.upper()
 
     #used for key matrix and plaintext vectors
     mShape = int(np.sqrt(len(key)))
