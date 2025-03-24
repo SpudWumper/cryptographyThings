@@ -62,8 +62,9 @@ class cryptographyUI:
         self.inTextBox.place(relwidth=1,relheight=1)
         self.outTextBox.place(relwidth=1,relheight=1)
 
-        self.algOptFrame = tk.Frame(master=sizeFrame, width=w, height=h/3)
+        self.algOptFrame = tk.Frame(master=sizeFrame, width=w)
         self.algOptFrame.pack(side=tk.BOTTOM)
+        self.errCheck = False
 
         algFrame = tk.Frame(master=sizeFrame,width=w, height=h/6)
         #algFrame.pack_propagate(False)
@@ -77,7 +78,6 @@ class cryptographyUI:
                 height=2,
                 relief="raised"
             )
-            #button.bind("<Button-1>", encrypt)
             button.grid(row=0, column=algorithmNames.index(buttonNames), padx=10, pady=10)
             self.buttons.append(button)
 
@@ -86,7 +86,6 @@ class cryptographyUI:
         parent = event.widget._nametowidget(parentName)
 
         plain = self.inTextBox.get(1.0, tk.END)
-        self.outTextBox.delete(1.0, tk.END)
 
         match self.encryptionAlgorithms.currentlySelected:
             case "Caesar":
@@ -97,11 +96,20 @@ class cryptographyUI:
                         try:
                             n = int(t)
                         except ValueError:
-                            print("Integer not entered")
+                            if not self.errCheck:
+                                errorL = tk.Label(master=self.algOptFrame,text="Enter valid number", fg="red")
+                                errorL.pack(fill="x",side=tk.BOTTOM)
+                                self.errCheck = True
 
-                if n != 0:
+                if n:
                     ciph = self.encryptionAlgorithms.caesar(plain, n, True)
+                    self.outTextBox.delete(1.0, tk.END)
                     self.outTextBox.insert(1.0, ciph)
+
+                    if self.errCheck:
+                        self.algOptFrame.winfo_children()[-1].destroy()
+                        self.errCheck = False
+
             case "Substitution":
                 ciph = self.encryptionAlgorithms.subkey(plain, "test")
                 self.outTextBox.insert(1.0, ciph)
@@ -125,18 +133,15 @@ class cryptographyUI:
                 for widget in self.algOptFrame.winfo_children():
                     widget.destroy()
                 
-                shiftL = tk.Label(master=self.algOptFrame,text="Choose the shift to use for encryption:")
+                shiftL = tk.Label(master=self.algOptFrame,text="Choose the shift (nonzero int) to use for encryption:")
                 shiftL.pack(fill="x",side=tk.TOP)
 
                 shiftT = tk.Entry(master=self.algOptFrame,width=10)
                 shiftT.pack(side=tk.TOP)
 
-                errorL = tk.Label(master=self.algOptFrame,text="")
-                errorL.pack(fill="x",side=tk.BOTTOM)
-
                 encButton = tk.Button(master=self.algOptFrame,width=10,height=2,text="Encrypt")
                 encButton.bind("<Button-1>", self.encrypt)
-                encButton.pack(side=tk.BOTTOM)
+                encButton.pack(side=tk.TOP)
 
                 #ciph = self.encryptionAlgorithms.caesar(plain, 5, True)
                 #self.outTextBox.insert(1.0, ciph)
