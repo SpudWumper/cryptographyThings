@@ -92,16 +92,16 @@ class cryptographyUI:
                 n = 0
                 for widget in parent.winfo_children():
                     if widget.winfo_class() == "Entry":
-                        t = widget.get()
-                        try:
-                            n = int(t)
-                        except ValueError:
-                            if not self.errCheck:
-                                errorL = tk.Label(master=self.algOptFrame,text="Enter valid number", fg="red")
-                                errorL.pack(fill="x",side=tk.BOTTOM)
-                                self.errCheck = True
-
-                if n:
+                        n = widget.get()
+                try:
+                    n = int(n)
+                except ValueError:
+                    if not self.errCheck:
+                        errorL = tk.Label(master=self.algOptFrame,text="Enter valid number", fg="red")
+                        errorL.pack(fill="x",side=tk.BOTTOM)
+                        self.errCheck = True
+                
+                if isinstance(n, int):
                     ciph = self.encryptionAlgorithms.caesar(plain, n, True)
                     self.outTextBox.delete(1.0, tk.END)
                     self.outTextBox.insert(1.0, ciph)
@@ -111,8 +111,26 @@ class cryptographyUI:
                         self.errCheck = False
 
             case "Substitution":
-                ciph = self.encryptionAlgorithms.subkey(plain, "test")
-                self.outTextBox.insert(1.0, ciph)
+                key = ""
+                for widget in parent.winfo_children():
+                    if widget.winfo_class() == "Entry":
+                        key = widget.get()
+                        
+                if not key.isalpha() or ' ' in key:
+                    if not self.errCheck:
+                        errorL = tk.Label(master=self.algOptFrame,text="Enter valid key", fg="red")
+                        errorL.pack(fill="x",side=tk.BOTTOM)
+                        self.errCheck = True
+
+                elif key != "":
+                    ciph = self.encryptionAlgorithms.subkey(plain, key.upper())
+                    self.outTextBox.delete(1.0, tk.END)
+                    self.outTextBox.insert(1.0, ciph)
+
+                    if self.errCheck:
+                        self.algOptFrame.winfo_children()[-1].destroy()
+                        self.errCheck = False
+
             case "Hill":
                 ciph = self.encryptionAlgorithms.hill(plain, "whiterabb")
                 self.outTextBox.insert(1.0, ciph)
@@ -143,11 +161,22 @@ class cryptographyUI:
                 encButton.bind("<Button-1>", self.encrypt)
                 encButton.pack(side=tk.TOP)
 
-                #ciph = self.encryptionAlgorithms.caesar(plain, 5, True)
-                #self.outTextBox.insert(1.0, ciph)
-            # case "Substitution":
-            #     ciph = self.encryptionAlgorithms.subkey(plain, "test")
-            #     self.outTextBox.insert(1.0, ciph)
+            case "Substitution":
+                self.encryptionAlgorithms.currentlySelected = alg
+
+                for widget in self.algOptFrame.winfo_children():
+                    widget.destroy()
+                
+                shiftL = tk.Label(master=self.algOptFrame,text="Choose a key to use for encryption (string of letters with less than 26 chars):")
+                shiftL.pack(fill="x",side=tk.TOP)
+
+                shiftT = tk.Entry(master=self.algOptFrame,width=30)
+                shiftT.pack(side=tk.TOP)
+
+                encButton = tk.Button(master=self.algOptFrame,width=10,height=2,text="Encrypt")
+                encButton.bind("<Button-1>", self.encrypt)
+                encButton.pack(side=tk.TOP)
+
             # case "Hill":
             #     ciph = self.encryptionAlgorithms.hill(plain, "whiterabb")
             #     self.outTextBox.insert(1.0, ciph)
@@ -157,6 +186,8 @@ class cryptographyUI:
             # case "Autokey":
             #     ciph = self.encryptionAlgorithms.autokey(plain, "test")
             #     self.outTextBox.insert(1.0, ciph)
+
+    #def createOptions(self, options)
 
 
     def enterMain(self):
