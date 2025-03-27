@@ -1,7 +1,9 @@
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
+import math
 import tkinter as tk
+from typing import List
 
 import encryptionAlgorithms as enc
 
@@ -116,7 +118,7 @@ class cryptographyUI:
                     if widget.winfo_class() == "Entry":
                         key = widget.get()
                         
-                if not key.isalpha() or ' ' in key:
+                if not key.isalpha() or ' ' in key or len(key) > 26:
                     if not self.errCheck:
                         errorL = tk.Label(master=self.algOptFrame,text="Enter valid key", fg="red")
                         errorL.pack(fill="x",side=tk.BOTTOM)
@@ -132,8 +134,26 @@ class cryptographyUI:
                         self.errCheck = False
 
             case "Hill":
-                ciph = self.encryptionAlgorithms.hill(plain, "whiterabb")
-                self.outTextBox.insert(1.0, ciph)
+                key = ""
+                for widget in parent.winfo_children():
+                    if widget.winfo_class() == "Entry":
+                        key = widget.get()
+                        
+                if not key.isalpha() or ' ' in key or not math.sqrt(len(key)).is_integer():
+                    if not self.errCheck:
+                        errorL = tk.Label(master=self.algOptFrame,text="Enter valid key", fg="red")
+                        errorL.pack(fill="x",side=tk.BOTTOM)
+                        self.errCheck = True
+
+                elif key != "":
+                    ciph = self.encryptionAlgorithms.hill(plain, key)
+                    self.outTextBox.delete(1.0, tk.END)
+                    self.outTextBox.insert(1.0, ciph)
+
+                    if self.errCheck:
+                        self.algOptFrame.winfo_children()[-1].destroy()
+                        self.errCheck = False
+                        
             case "Railfence":
                 ciph = self.encryptionAlgorithms.rail(plain, 5)
                 self.outTextBox.insert(1.0, ciph)
@@ -147,39 +167,16 @@ class cryptographyUI:
         match alg:
             case "Caesar":
                 self.encryptionAlgorithms.currentlySelected = alg
-
-                for widget in self.algOptFrame.winfo_children():
-                    widget.destroy()
-                
-                shiftL = tk.Label(master=self.algOptFrame,text="Choose the shift (nonzero int) to use for encryption:")
-                shiftL.pack(fill="x",side=tk.TOP)
-
-                shiftT = tk.Entry(master=self.algOptFrame,width=10)
-                shiftT.pack(side=tk.TOP)
-
-                encButton = tk.Button(master=self.algOptFrame,width=10,height=2,text="Encrypt")
-                encButton.bind("<Button-1>", self.encrypt)
-                encButton.pack(side=tk.TOP)
+                self.createOptions(["Choose the shift (nonzero int) to use for encryption:"])
 
             case "Substitution":
                 self.encryptionAlgorithms.currentlySelected = alg
+                self.createOptions(["Choose a key to use for encryption (string of letters with less than 26 chars):"])
 
-                for widget in self.algOptFrame.winfo_children():
-                    widget.destroy()
-                
-                shiftL = tk.Label(master=self.algOptFrame,text="Choose a key to use for encryption (string of letters with less than 26 chars):")
-                shiftL.pack(fill="x",side=tk.TOP)
+            case "Hill":
+                self.encryptionAlgorithms.currentlySelected = alg
+                self.createOptions(["Choose a key to use for encryption (string of letters with length = square - 4,9,16,...):"])
 
-                shiftT = tk.Entry(master=self.algOptFrame,width=30)
-                shiftT.pack(side=tk.TOP)
-
-                encButton = tk.Button(master=self.algOptFrame,width=10,height=2,text="Encrypt")
-                encButton.bind("<Button-1>", self.encrypt)
-                encButton.pack(side=tk.TOP)
-
-            # case "Hill":
-            #     ciph = self.encryptionAlgorithms.hill(plain, "whiterabb")
-            #     self.outTextBox.insert(1.0, ciph)
             # case "Railfence":
             #     ciph = self.encryptionAlgorithms.rail(plain, 5)
             #     self.outTextBox.insert(1.0, ciph)
@@ -187,7 +184,20 @@ class cryptographyUI:
             #     ciph = self.encryptionAlgorithms.autokey(plain, "test")
             #     self.outTextBox.insert(1.0, ciph)
 
-    #def createOptions(self, options)
+    def createOptions(self, options: List[str]):
+        for option in options:
+            for widget in self.algOptFrame.winfo_children():
+                widget.destroy()
+            
+            shiftL = tk.Label(master=self.algOptFrame,text=option)
+            shiftL.pack(fill="x",side=tk.TOP)
+
+            shiftT = tk.Entry(master=self.algOptFrame,width=30)
+            shiftT.pack(side=tk.TOP)
+
+            encButton = tk.Button(master=self.algOptFrame,width=10,height=2,text="Encrypt")
+            encButton.bind("<Button-1>", self.encrypt)
+            encButton.pack(side=tk.TOP)
 
 
     def enterMain(self):
